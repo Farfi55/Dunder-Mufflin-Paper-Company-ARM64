@@ -33,6 +33,9 @@ fmt_menu_options:
     .ascii "9: Mostra dundies del 2021\n"
     .asciz "0: Esci\n"
 
+
+
+
 fmt_prezzo_medio: .asciz "\nPrezzo unitario medio: %.2f\n\n"
 
 fmt_printf_val_storage: .asciz "Il valore complessivo magazino è: %d€\n\n"
