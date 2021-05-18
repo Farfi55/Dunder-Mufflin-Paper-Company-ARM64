@@ -3,32 +3,33 @@ filename: .asciz "informazione.dat"
 read_mode: .asciz "r"
 write_mode: .asciz "w"
 fmt_menu_title:    
-    .ascii " ____            _                       \n"
-    .ascii "|    \ _ _ ___ _| |___ ___               \n"
-    .ascii "|  |  | | |   | . | -_|  _|              \n"
-    .ascii "|____/|___|_|_|___|___|_|                \n"
+    .ascii "\t ____            _                       \n"
+    .ascii "\t|    \\ _ _ ___ _| |___ ___               \n"
+    .ascii "\t|  |  | | |   | . | -_|  _|              \n"
+    .ascii "\t|____/|___|_|_|___|___|_|                \n"
     .ascii "                                         \n"
-    .ascii " _____ _ ___ ___ _ _        _ _     _    \n"
-    .ascii "|     |_|  _|  _| |_|___   | | |_ _| |   \n"
-    .ascii "| | | | |  _|  _| | |   |  | |  _| . |_  \n"
-    .asciz "|_|_|_|_|_| |_| |_|_|_|_|  |_|_| |___|_| \n"
+    .ascii "\t _____ _ ___ ___ _ _        _ _     _    \n"
+    .ascii "\t|     |_|  _|  _| |_|___   | | |_ _| |   \n"
+    .ascii "\t| | | | |  _|  _| | |   |  | |  _| . |_  \n"
+    .asciz "\t|_|_|_|_|_| |_| |_|_|_|_|  |_|_| |___|_| \n\n"
 
 fmt_menu_line:
-    .asciz "--------------------------------------------------------------------\n"
+    .asciz "+----+---------------------------------+-----------+-----------+-----------------+\n"
 fmt_menu_header:
-    .asciz "  # NOME          QUANTITA`   SPESSORE    PREZZO UNITARIO\n"
+    .asciz "|  # | NOME                            | QUANTITA` | SPESSORE  | PREZZO UNITARIO |\n"
 fmt_menu_entry:
-    .asciz "%3d %-32s %-8d %-8d %-8d\n"
+    .asciz "|%3d | %-32s|  %-8d |  %-8d | %-8d        |\n"
 
 
 fmt_menu_options:
-    .ascii "1: Aggiungi ordine\n"
+    .ascii "\n1: Aggiungi ordine\n"
     .ascii "2: Elimina ordine\n"
     .ascii "3: Calcola prezzo unitario medio\n"
     .ascii "4: Calcola valore complessivo magazzino\n"
     .ascii "5: Calcola quantita' totale ordini\n"
     .ascii "6: Calcola spessore medio\n"
     .ascii "7: Mostra ordini con quantita' maggiori di\n"
+
     .ascii "8: Mostra ordini con quantita' minori di\n"
     .ascii "9: Mostra dundies del 2021\n"
     .asciz "0: Esci\n"
@@ -42,7 +43,7 @@ fmt_prompt_menu: .asciz "> "
 .align 2
 
 .data
-n_orders: .word 0
+n_orders: .word 3
 
 .equ max_orders, 10
 
@@ -60,15 +61,18 @@ n_orders: .word 0
 
                           //                        |          |         |         |   |
                           // 1 11111111122222222223333   3 3 3 3   3 3 4 4   4 4 4 444
-                  //1234567890 12345678901234567890123   4 5 6 7   8 9 0 1   2 3 4 567890
-test_order: .asciz "nome test\0                      \x24\0\0\0\x04\0\0\0\x1c\0\0\0"
+                  //1234567890 12345678901234567890123   4 5 6 7   8 9 0 1   2 3 4 56789
+test_order: .asciz "nome test\0                      \x24\0\0\0\x04\0\0\0\x1c\0\0\0\0\0\0"
+orders: .asciz "nome test\0                      \x24\0\0\0\x04\0\0\0\x1c\0\0\0\0\0\0" 
+        .asciz "risma di carta lucida\0          \x34\0\0\0\x10\0\0\0\x05\0\0\0\0\0\0" 
+        .asciz "nome test\0                      \x1A\0\0\0\x08\0\0\0\xF3\0\0\0\0\0\0" 
+        .skip order_size_aligned * (max_orders -3)
 
 
 .bss
 tmp_str: .skip 128
 tmp_int: .skip 8
 
-orders: .skip order_size_aligned * max_orders
 
 
 .macro read_int prompt
@@ -97,6 +101,11 @@ orders: .skip order_size_aligned * max_orders
 .global main
 main:
     stp x29, x30, [sp, #-16]!
+
+
+
+    adr x0, fmt_menu_title  // logo della compagnia
+    bl printf
 
 
     # load data from file
@@ -171,9 +180,7 @@ print_menu:
     stp x29, x30, [sp, #-16]!
     stp x19, x20, [sp, #-16]!
     str x21, [sp, #-8]!
-
-    adr x0, fmt_menu_title      // logo della compagnia
-    bl printf
+    
     adr x0, fmt_menu_line       // linea separatrice
     bl printf
     adr x0, fmt_menu_header     // intestazione tabella
@@ -188,14 +195,13 @@ print_menu:
     print_orders_loop:
         cmp w19, w20
         bge end_print_orders_loop
-
-
+ 
         adr x0, fmt_menu_entry
         add x1, x19, #1
         add x2, x21, offset_order_name
-        add x3, x21, offset_order_quantity
-        add x4, x21, offset_order_thickness
-        ldr x5, [x21, offset_order_unit_price]
+        ldr w3, [x21, offset_order_quantity]
+        ldr w4, [x21, offset_order_thickness]
+        ldr w5, [x21, offset_order_unit_price]
         bl printf
 
         add w19, w19, #1
