@@ -2,18 +2,23 @@
 filename: .asciz "informazione.dat"
 read_mode: .asciz "r"
 write_mode: .asciz "w"
-fmt_menu_title:
-    .ascii "\n"
-    .ascii "NOME COMPAGNIA YUPPIE YE\n"
-    .asciz "\n"
-
+fmt_menu_title:    
+    .ascii " ____            _                       \n"
+    .ascii "|    \ _ _ ___ _| |___ ___               \n"
+    .ascii "|  |  | | |   | . | -_|  _|              \n"
+    .ascii "|____/|___|_|_|___|___|_|                \n"
+    .ascii "                                         \n"
+    .ascii " _____ _ ___ ___ _ _        _ _     _    \n"
+    .ascii "|     |_|  _|  _| |_|___   | | |_ _| |   \n"
+    .ascii "| | | | |  _|  _| | |   |  | |  _| . |_  \n"
+    .asciz "|_|_|_|_|_| |_| |_|_|_|_|  |_|_| |___|_| \n"
 
 fmt_menu_line:
     .asciz "--------------------------------------------------------------------\n"
 fmt_menu_header:
     .asciz "  # NOME          QUANTITA`   SPESSORE    PREZZO UNITARIO\n"
 fmt_menu_entry:
-    .asciz "%3d %-32s %-8d %-8d %-8d\n" #DA CAMBIARE
+    .asciz "%3d %-32s %-8d %-8d %-8d\n"
 
 fmt_prezzo_medio_double: .asciz "\nPrezzo medio: %.2f\n\n"
 
@@ -34,13 +39,16 @@ n_orders: .word 0
 .equ size_order_unit_price, 44
 .equ order_size_aligned, 48
 
-.bss
-tmp_str: .skip 128
-tmp_int: .skip 8
+
                           //                        |          |         |         |   |
                           // 1 11111111122222222223333   3 3 3 3   3 3 4 4   4 4 4 444
                   //1234567890 12345678901234567890123   4 5 6 7   8 9 0 1   2 3 4 567890
 test_order: .asciz "nome test\0                      \x24\0\0\0\x04\0\0\0\x1c\0\0\0"
+
+
+.bss
+tmp_str: .skip 128
+tmp_int: .skip 8
 
 orders: .skip order_size_aligned * max_orders
 
@@ -75,45 +83,45 @@ main:
 
     # load data from file
     menu_loop:
-        # bl print_menu
+        bl print_menu
 
         read_int fmt_prompt_menu
 
         cmp x0, #0
-        beq end_main_loop
+        beq end_menu_loop
         
 
         cmp x0, #1
         bne no_aggiungi_ordine
         #bl aggiungi_ordine
-        no_aggiungi_ordine
+        no_aggiungi_ordine:
 
         cmp x0, #2
         bne no_rimuovi_ordine
         #bl 
-        no_rimuovi_ordine
+        no_rimuovi_ordine:
 
         cmp x0, #3
         bne no_visualizza_statistiche_1
         #bl prezzo_medio_unitario
         #bl valore_complessivo_magazino
-        no_visualizza_statistiche_1
+        no_visualizza_statistiche_1:
 
         cmp x0, #3
         bne no_visualizza_statistiche_2
         #bl quantita_totale_ordini
         #bl spessore_medio
-        no_visualizza_statistiche_2
+        no_visualizza_statistiche_2:
 
         cmp x0, #4
         bne no_filtro_maggiore_di
         #bl filtro_maggiore_di
-        no_filtro_maggiore_di
+        no_filtro_maggiore_di:
 
         cmp x0, #5
         bne no_filtro_minore_di
         #bl filtro_minore_di
-        no_filtro_minore_di
+        no_filtro_minore_di:
 
 
 
@@ -126,3 +134,17 @@ main:
     ldp x29, x30, [sp], #16
     ret
     .size main, (. - main)
+
+
+
+.type print_menu, %function
+print_menu:
+    stp x29, x30, [sp, #-16]!
+    stp x19, x20, [sp, #-16]!
+
+
+
+    ldp x19, x20, [sp], #16
+    ldp x29, x30, [sp], #16
+    ret
+    .size print_menu, (. - print_menu)
