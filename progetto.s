@@ -29,12 +29,11 @@ fmt_menu_options:
     .ascii "5: Calcola quantita' totale ordini\n"
     .ascii "6: Calcola spessore medio\n"
     .ascii "7: Mostra ordini con quantita' maggiori di\n"
-
     .ascii "8: Mostra ordini con quantita' minori di\n"
     .ascii "9: Mostra dundies del 2021\n"
     .asciz "0: Esci\n"
 
-fmt_prezzo_medio_double: .asciz "\nPrezzo medio: %.2f\n\n"
+fmt_prezzo_medio: .asciz "\nPrezzo unitario medio: %.2f\n\n"
 
 fmt_num_int: .asciz "Inserire il filtro di ricerca (maggione di questa quantità): "
 
@@ -199,7 +198,7 @@ main:
 
         cmp x0, #3
         bne no_prezzo_unitario_medio
-            #bl prezzo_unitario_medio
+            bl prezzo_unitario_medio
         no_prezzo_unitario_medio:
 
         cmp x0, #4
@@ -219,13 +218,18 @@ main:
 
         cmp x0, #7
         bne no_filtro_maggiore_di
-            bl filtro_maggiore_di
+
+            mov x0, #1 
+            bl filtro_quantita
+
             b skip_print_orders
         no_filtro_maggiore_di:
 
         cmp x0, #8
         bne no_filtro_minore_di
-            #bl filtro_minore_di
+            mov x0, #0
+            bl filtro_quantita
+
             b skip_print_orders
         no_filtro_minore_di:
 
@@ -290,13 +294,55 @@ print_orders:
 
 
 
-.type filtro_maggiore_di, %function
-.global filtro_maggiore_di
-filtro_maggiore_di:
+// OPZIONE 3
+.type prezzo_unitario_medio, %function
+.global prezzo_unitario_medio
+prezzo_unitario_medio:
+    stp x29, x30, [sp, #-16]!
+    stp x19, x20, [sp, #-16]!
+
+    fmov d1, xzr //Azzeriamo il registro (flaot) d1
+
+    ldr w0, n_orders //Carichiamo il valore di n_orders in x0
+    mov x2, x0
+
+    adr x3, orders //Inseriramo l'indirizzo di orders nel registro x3
+    add x3, x3, offset_order_unit_price //Sommiamo l'indirizzo precedentemente ottenuto con la posizione del dato da ottenere
+
+    loop_media:
+        sub x2, x2, #1 //Sottraiamo 1 dal numero di record rimasti nel registro x2
+
+        ldr x4, [x3] //Carichiamo il valore con l'offset precedentemente calcolato e lo inseriamo nel registro x4
+        ucvtf d4, x4 //Convertiamo il valore integer in float e lo posizioniamo nel registro d4
+        fadd d2, d2, d4 //Sommiamo i valori
+        add x3, x3, order_size_aligned //Carichiamo l'offset del prossimo valore da leggere
+
+    cbnz x2, loop_media //Se il numero contenuto in x2 == 0 allora esci dal loop
+
+    ucvtf d1, w0 //Convertiamo il valore contenuto in x0 in float
+    fdiv d0, d2, d1 //Calcoliamo la media
+
+    adr x0, fmt_prezzo_medio //Stampiamo a video la media
+    bl printf
+
+    ldp x19, x20, [sp], #16
+    ldp x29, x30, [sp], #16
+    ret
+    .size prezzo_unitario_medio, (. - prezzo_unitario_medio)
+
+
+// OPZIONE 7 - 8
+
+// se c'e' 1 su x0 mostra solo gli ordini con 
+// x0 == 1: quantita maggiore
+// x0 == 0: quantita minore
+.type filtro_quantita, %function
+.global filtro_quantita
+filtro_quantita:
     stp x29, x30, [sp, #-16]!
     stp x19, x20, [sp, #-16]!
     stp x21, x22, [sp, #-16]!
-
+    stp x23, x24, [sp, #-16]!
 /*  non c'e' bisogno di leggere\scrivere il file se non si apportano modifiche
 
     adr x0, filename
@@ -314,6 +360,12 @@ filtro_maggiore_di:
 */
 
 
+    //salvo la scelta tra maggiore o minore su x23, per riepilogare
+    // x0 == 1: mostra ordini con quantita maggiore
+    // x0 == 0: mostra ordini con quantita minore
+    mov x23, x0  
+
+
     adr x0, fmt_num_int
     bl printf
     scan_filter tmp_int
@@ -325,9 +377,9 @@ filtro_maggiore_di:
 
     ldr w20, n_orders
     // inizio della tabella filtrata
-    filtro_maggiore_loop:
+    filtro_quantita_loop:
         cmp w21, w20
-        beq end_filtro_maggiore
+        beq end_filtro_quantita
 
         adr x0, orders
         ldr w1, =order_size_aligned
@@ -337,10 +389,20 @@ filtro_maggiore_di:
         ldr w2, [x0, offset_order_quantity]
 
         add w21, w21, #1 //incremento i prima
+
+
+        cbz x23, filtro_minore_di // se x23 == 0
+
+        filtro_maggiore_di:
         cmp x2, x22
+        blt filtro_quantita_loop // se la quantita' e' minore, saltiamo l'ordine
+            b filter_print_order
 
-        blt filtro_maggiore_loop
+        filtro_minore_di:
+        cmp x2, x22
+        bgt filtro_quantita_loop // se la quantita' e' maggiore, saltiamo l'ordine
 
+        filter_print_order:
             mov w1, w21            
             add x2, x0, offset_order_name
             ldr w3, [x0, offset_order_quantity]
@@ -349,18 +411,19 @@ filtro_maggiore_di:
             adr x0, fmt_menu_entry
             bl printf
         
-        b filtro_maggiore_loop    
+        b filtro_quantita_loop    
 
-    end_filtro_maggiore:
+    end_filtro_quantita:
 
     adr x0, fmt_menu_line       
     bl printf
 
     mov w0, #0
+    ldp x23, x24, [sp], #16
     ldp x21, x22, [sp], #16
     ldp x19, x20, [sp], #16
     ldp x29, x30, [sp], #16
     ret
-    .size filtro_maggiore_di, (. - filtro_maggiore_di)
+    .size filtro_quantita, (. - filtro_quantita)
 
         
