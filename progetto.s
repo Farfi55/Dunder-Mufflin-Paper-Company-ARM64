@@ -20,6 +20,19 @@ fmt_menu_header:
 fmt_menu_entry:
     .asciz "%3d %-32s %-8d %-8d %-8d\n"
 
+
+fmt_menu_options:
+    .ascii "1: Aggiungi ordine\n"
+    .ascii "2: Elimina ordine\n"
+    .ascii "3: Calcola prezzo unitario medio\n"
+    .ascii "4: Calcola valore complessivo magazzino\n"
+    .ascii "5: Calcola quantita' totale ordini\n"
+    .ascii "6: Calcola spessore medio\n"
+    .ascii "7: Mostra ordini con quantita' maggiori di\n"
+    .ascii "8: Mostra ordini con quantita' minori di\n"
+    .ascii "9: Mostra dundies del 2021\n"
+    .asciz "0: Esci\n"
+
 fmt_prezzo_medio_double: .asciz "\nPrezzo medio: %.2f\n\n"
 
 fmt_scan_int: .asciz "%d"
@@ -34,9 +47,14 @@ n_orders: .word 0
 .equ max_orders, 10
 
 .equ size_order_name, 32
-.equ size_order_quantity, 36
-.equ size_order_THICCness, 40
-.equ size_order_unit_price, 44
+.equ size_order_quantity, 4
+.equ size_order_thickness, 4
+.equ size_order_unit_price, 4
+
+.equ offset_order_name, 0
+.equ offset_order_quantity, offset_order_name + size_order_name
+.equ offset_order_thickness, offset_order_quantity + size_order_quantity
+.equ offset_order_unit_price, offset_order_thickness + size_order_thickness
 .equ order_size_aligned, 48
 
 
@@ -98,32 +116,43 @@ main:
 
         cmp x0, #2
         bne no_rimuovi_ordine
-        #bl 
+        #bl rimuovi_ordine
         no_rimuovi_ordine:
 
         cmp x0, #3
-        bne no_visualizza_statistiche_1
-        #bl prezzo_medio_unitario
-        #bl valore_complessivo_magazino
-        no_visualizza_statistiche_1:
-
-        cmp x0, #3
-        bne no_visualizza_statistiche_2
-        #bl quantita_totale_ordini
-        #bl spessore_medio
-        no_visualizza_statistiche_2:
+        bne no_prezzo_unitario_medio
+        #bl prezzo_unitario_medio
+        no_prezzo_unitario_medio:
 
         cmp x0, #4
+        bne no_valore_complessivo_magazino
+        #bl valore_complessivo_magazino
+        no_valore_complessivo_magazino:
+
+        cmp x0, #5
+        bne no_quantita_totale_ordini
+        #bl quantita_totale_ordini
+        no_quantita_totale_ordini:
+
+        cmp x0, #6
+        bne no_spessore_medio
+        #bl spessore_medio
+        no_spessore_medio:
+
+        cmp x0, #7
         bne no_filtro_maggiore_di
         #bl filtro_maggiore_di
         no_filtro_maggiore_di:
 
-        cmp x0, #5
+        cmp x0, #8
         bne no_filtro_minore_di
         #bl filtro_minore_di
         no_filtro_minore_di:
 
-
+        cmp x0, #9
+        bne no_mostra_dundies
+        //bl dundies
+        no_mostra_dundies:
 
 
         b menu_loop
@@ -141,9 +170,47 @@ main:
 print_menu:
     stp x29, x30, [sp, #-16]!
     stp x19, x20, [sp, #-16]!
+    str x21, [sp, #-8]!
+
+    adr x0, fmt_menu_title      // logo della compagnia
+    bl printf
+    adr x0, fmt_menu_line       // linea separatrice
+    bl printf
+    adr x0, fmt_menu_header     // intestazione tabella
+    bl printf
+    adr x0, fmt_menu_line
+    bl printf
+
+    //inizio del corpo della tabella
+    mov w19, #0
+    ldr w20, n_orders
+    adr x21, orders    
+    print_orders_loop:
+        cmp w19, w20
+        bge end_print_orders_loop
 
 
+        adr x0, fmt_menu_entry
+        add x1, x19, #1
+        add x2, x21, offset_order_name
+        add x3, x21, offset_order_quantity
+        add x4, x21, offset_order_thickness
+        ldr x5, [x21, offset_order_unit_price]
+        bl printf
 
+        add w19, w19, #1
+        add x21, x21, order_size_aligned
+        b print_orders_loop
+    end_print_orders_loop:
+    //fine del corpo della tabella
+
+    adr x0, fmt_menu_line
+    bl printf
+
+    adr x0, fmt_menu_options
+    bl printf
+    
+    ldr x21, [sp], #8
     ldp x19, x20, [sp], #16
     ldp x29, x30, [sp], #16
     ret
