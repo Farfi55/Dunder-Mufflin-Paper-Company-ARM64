@@ -13,7 +13,7 @@ fmt_menu_line:
 fmt_menu_header:
     .asciz "  # NOME          QUANTITA`   SPESSORE    PREZZO UNITARIO\n"
 fmt_menu_entry:
-    .asciz "%3d %-10s %-20s %-20s %8d\n" #DA CAMBIARE
+    .asciz "%3d %-32s %-8d %-8d %-8d\n" #DA CAMBIARE
 
 fmt_prezzo_medio_double: .asciz "\nPrezzo medio: %.2f\n\n"
 
@@ -28,11 +28,20 @@ n_orders: .word 0
 
 .equ max_orders, 10
 
-.equ order_size_aligned, 64
+.equ size_order_name, 32
+.equ size_order_quantity, 36
+.equ size_order_THICCness, 40
+.equ size_order_unit_price, 44
+.equ order_size_aligned, 48
 
 .bss
 tmp_str: .skip 128
 tmp_int: .skip 8
+                          //                        |          |         |         |   |
+                          // 1 11111111122222222223333   3 3 3 3   3 3 4 4   4 4 4 444
+                  //1234567890 12345678901234567890123   4 5 6 7   8 9 0 1   2 3 4 567890
+test_order: .asciz "nome test\0                      \x24\0\0\0\x04\0\0\0\x1c\0\0\0"
+
 orders: .skip order_size_aligned * max_orders
 
 
