@@ -43,10 +43,16 @@ fmt_scan_int: .asciz "%d"
 fmt_scan_str: .asciz "%127s"
 
 fmt_prompt_menu: .asciz "> "
+
+fmt_name: .asciz "Ordine: "
+fmt_quantity: .asciz "Quantita': "
+fmt_thickness: .asciz "Spessore: "
+fmt_unit_price: .asciz "Prezzo unitario: "
+fmt_fail_add_order: .asciz "Errore: ci sono troppi ordini!"
 .align 2
 
 .data
-n_orders: .word 3
+n_orders: .word 0
 
 .equ max_orders, 10
 
@@ -61,22 +67,10 @@ n_orders: .word 3
 .equ offset_order_unit_price, offset_order_thickness + size_order_thickness
 .equ order_size_aligned, 48
 
-
-                          //                        |          |         |         |   |
-                          // 1 11111111122222222223333   3 3 3 3   3 3 4 4   4 4 4 444
-                  //1234567890 12345678901234567890123   4 5 6 7   8 9 0 1   2 3 4 56789
-test_order: .asciz "nome test\0                      \x24\0\0\0\x04\0\0\0\x1c\0\0\0\0\0\0"
-
-orders: .asciz "nome test\0                      \x24\0\0\0\x04\0\0\0\x1c\0\0\0\0\0\0" 
-        .asciz "risma di carta lucida\0          \x34\0\0\0\x10\0\0\0\x05\0\0\0\0\0\0" 
-        .asciz "nome test\0                      \x1A\0\0\0\x08\0\0\0\xF3\0\0\0\0\0\0" 
-        .skip order_size_aligned * (max_orders -3)
-
-
 .bss
 tmp_str: .skip 128
 tmp_int: .skip 8
-
+orders: .skip order_size_aligned * max_orders    //"Scatola" che andiamo a riempire con i dati
 
 .macro read_int prompt
     adr x0, \prompt
@@ -97,6 +91,17 @@ tmp_int: .skip 8
     adr x0, fmt_scan_str
     adr x1, tmp_str
     bl scanf
+.endm
+
+
+.macro save_to position, offset, size           //usiamo un alias di memcpy per copiare la stringa in fmt_str nell'array
+    add x0, \position, \offset                 
+    ldr x1, =tmp_str                            
+    mov x2, \size
+    bl strncpy
+
+    add x0, \position, \offset + \size - 1
+    strb wzr, [x0]                         
 .endm
 
 
@@ -190,7 +195,8 @@ main:
 
         cmp x0, #1
         bne no_aggiungi_ordine
-            #bl aggiungi_ordine
+        bl aggiungi_ordine
+        
         no_aggiungi_ordine:
 
         cmp x0, #2
@@ -470,4 +476,48 @@ filtro_quantita:
     ret
     .size filtro_quantita, (. - filtro_quantita)
 
+.type aggiungi_ordine, %function
+aggiungi_ordine:
+    stp x29, x30, [sp, #-16]!
+    stp x19, x20, [sp, #-16]!
+
+    ldr x19, n_orders           //Numero di item presenti 
+    adr x20, orders             //Indirizzo dell'array
+    mov x0, order_size_aligned  
+    mul x0, x19, x0             //Calcoli la grandezza array (al momento della chiamata)                    
+    add x20, x20, x0            //Punti l'indirizzo dove cominciare ad inserire i dati
+
+    cmp x19, max_orders
+    bge fail_add_order         //Se l'array e' pieno
+
+        read_str fmt_name
+        save_to x20, offset_order_name, size_order_name
+
+        read_int fmt_quantity
+        str w0, [x20, offset_order_quantity]
+
+        read_int fmt_thickness
+        str w0, [x20, offset_order_thickness]
+
+        read_int fmt_unit_price
+        str w0, [x20, offset_order_unit_price]
+    
+        add x19, x19, #1
+        adr x20, n_orders
+        str x19, [x20]
+
+        //bl save_data  !!!
+
+        b end_add_order
+
+fail_add_order:
+adr x0, fmt_fail_add_order
+bl printf
+
+end_add_order:
+
+ldp x19, x20, [sp], #16
+ldp x29, x30, [sp], #16
+ret
+.size add_order, (. - aggiungi_ordine)
         
