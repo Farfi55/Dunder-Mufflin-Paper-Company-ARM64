@@ -35,6 +35,8 @@ fmt_menu_options:
 
 fmt_prezzo_medio: .asciz "\nPrezzo unitario medio: %.2f\n\n"
 
+fmt_printf_val_storage: .asciz "Il valore complessivo magazino è: %d€\n\n"
+
 fmt_num_int: .asciz "Inserire il filtro di ricerca (maggione di questa quantità): "
 
 fmt_scan_int: .asciz "%d"
@@ -294,42 +296,84 @@ print_orders:
 
 
 
-// OPZIONE 3
+// OPZIONE 3 - 4
 .type prezzo_unitario_medio, %function
 .global prezzo_unitario_medio
 prezzo_unitario_medio:
     stp x29, x30, [sp, #-16]!
     stp x19, x20, [sp, #-16]!
 
-    fmov d1, xzr //Azzeriamo il registro (flaot) d1
+    mov x1, xzr                             //Azzeriamo il registro (flaot) d1
 
-    ldr w0, n_orders //Carichiamo il valore di n_orders in x0
-    mov x2, x0
+    ldr w0, n_orders                        //Carichiamo il valore di n_orders in x0
+    mov x2, x0                              
 
-    adr x3, orders //Inseriramo l'indirizzo di orders nel registro x3
-    add x3, x3, offset_order_unit_price //Sommiamo l'indirizzo precedentemente ottenuto con la posizione del dato da ottenere
+    adr x3, orders                          //Inseriramo l'indirizzo di orders nel registro x3
+    add x3, x3, offset_order_unit_price     //Sommiamo l'indirizzo precedentemente ottenuto con la posizione del dato da ottenere 
 
     loop_media:
-        sub x2, x2, #1 //Sottraiamo 1 dal numero di record rimasti nel registro x2
+        sub x2, x2, #1                      //Sottraiamo 1 dal numero di record rimasti nel registro x2 
 
-        ldr x4, [x3] //Carichiamo il valore con l'offset precedentemente calcolato e lo inseriamo nel registro x4
-        ucvtf d4, x4 //Convertiamo il valore integer in float e lo posizioniamo nel registro d4
-        fadd d2, d2, d4 //Sommiamo i valori
-        add x3, x3, order_size_aligned //Carichiamo l'offset del prossimo valore da leggere
+        ldr x4, [x3]                        //Carichiamo il valore con l'offset precedentemente calcolato e lo inseriamo nel registro x4
+        add x1, x1, x4                      //Sommiamo i valori
+        add x3, x3, order_size_aligned      //Carichiamo l'offset del prossimo valore da leggere
 
-    cbnz x2, loop_media //Se il numero contenuto in x2 == 0 allora esci dal loop
+        cbnz x2, loop_media                  //Se il numero contenuto in x2 == 0 allora esci dal loop
 
-    ucvtf d1, w0 //Convertiamo il valore contenuto in x0 in float
-    fdiv d0, d2, d1 //Calcoliamo la media
+    
+    ucvtf d1, x0                            //Convertiamo il valore contenuto in x0 in float
+    ucvtf d2, x1                            //Convertiamo il valore contenuto in x0 in float
+    fdiv d0, d2, d1                         //Calcoliamo la media
 
-    adr x0, fmt_prezzo_medio //Stampiamo a video la media
+    adr x0, fmt_prezzo_medio                //Stampiamo a video la media
     bl printf
 
     ldp x19, x20, [sp], #16
     ldp x29, x30, [sp], #16
-    ret
-    .size prezzo_unitario_medio, (. - prezzo_unitario_medio)
 
+    ret
+.size prezzo_unitario_medio, (. - prezzo_unitario_medio)
+
+
+.type valore_complessivo_magazino, %function
+.global valore_complessivo_magazino
+valore_complessivo_magazino:
+    stp x29, x30, [sp, #-16]!
+    stp x19, x20, [sp, #-16]!
+
+    mov x1, xzr
+
+    ldr w0, n_orders                        //Carichiamo il valore di n_orders in x0
+    mov x2, x0                              
+
+    adr x3, orders                          //Inseriramo l'indirizzo di orders nel registro x3
+
+    add x6, x3, offset_order_quantity       //Sommiamo l'indirizzo precedentemente ottenuto con la posizione del dato da ottenere 
+    add x3, x3, offset_order_unit_price     //Sommiamo l'indirizzo precedentemente ottenuto con la posizione del dato da ottenere 
+
+    loop_valore_complessivo:
+        sub x2, x2, #1                      //Sottraiamo 1 dal numero di record rimasti nel registro x2 
+
+        ldr x4, [x3]                        //Carichiamo il valore con l'offset precedentemente calcolato e lo inseriamo nel registro x4
+        ldr x5, [x6]                        //Carichiamo il valore con l'offset precedentemente calcolato e lo inseriamo nel registro x5
+
+        mul x5, x4, x5                      //Moltiplichiamo il numero dei prodotti per il prezzo e lo salviamo nel registro x5
+        add x1, x1, x5                      //Sommiamo il risultato con i valori precendenti 
+        
+        add x3, x3, order_size_aligned      //Carichiamo l'offset del prossimo valore da leggere
+        add x6, x6, order_size_aligned      //Carichiamo l'offset del prossimo valore da leggere
+
+        cbnz x2, loop_valore_complessivo    //Se il numero contenuto in x2 == 0 allora esci dal loop
+
+
+    adr x0, fmt_printf_val_storage          //Stampiamo a video la media
+    bl printf
+
+    ldp x19, x20, [sp], #16
+    ldp x29, x30, [sp], #16
+
+    ret
+.size valore_complessivo_magazino, (. - valore_complessivo_magazino)
 
 // OPZIONE 7 - 8
 
