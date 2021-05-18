@@ -205,7 +205,7 @@ main:
 
         cmp x0, #4
         bne no_valore_complessivo_magazino
-            #bl valore_complessivo_magazino
+            bl valore_complessivo_magazino
         no_valore_complessivo_magazino:
 
         cmp x0, #5
