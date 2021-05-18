@@ -7,7 +7,7 @@ fmt_menu_title:
     .ascii "\t|    \\ _ _ ___ _| |___ ___               \n"
     .ascii "\t|  |  | | |   | . | -_|  _|              \n"
     .ascii "\t|____/|___|_|_|___|___|_|                \n"
-    .ascii "                                         \n"
+    .ascii "                                           \n"
     .ascii "\t _____ _ ___ ___ _ _        _ _     _    \n"
     .ascii "\t|     |_|  _|  _| |_|___   | | |_ _| |   \n"
     .ascii "\t| | | | |  _|  _| | |   |  | |  _| . |_  \n"
@@ -36,6 +36,8 @@ fmt_menu_options:
 
 fmt_prezzo_medio_double: .asciz "\nPrezzo medio: %.2f\n\n"
 
+fmt_num_int: .asciz "Inserire il filtro di ricerca (maggione di questa quantità): "
+
 fmt_scan_int: .asciz "%d"
 fmt_scan_str: .asciz "%127s"
 
@@ -63,6 +65,7 @@ n_orders: .word 3
                           // 1 11111111122222222223333   3 3 3 3   3 3 4 4   4 4 4 444
                   //1234567890 12345678901234567890123   4 5 6 7   8 9 0 1   2 3 4 56789
 test_order: .asciz "nome test\0                      \x24\0\0\0\x04\0\0\0\x1c\0\0\0\0\0\0"
+
 orders: .asciz "nome test\0                      \x24\0\0\0\x04\0\0\0\x1c\0\0\0\0\0\0" 
         .asciz "risma di carta lucida\0          \x34\0\0\0\x10\0\0\0\x05\0\0\0\0\0\0" 
         .asciz "nome test\0                      \x1A\0\0\0\x08\0\0\0\xF3\0\0\0\0\0\0" 
@@ -72,7 +75,6 @@ orders: .asciz "nome test\0                      \x24\0\0\0\x04\0\0\0\x1c\0\0\0\
 .bss
 tmp_str: .skip 128
 tmp_int: .skip 8
-
 
 
 .macro read_int prompt
@@ -86,6 +88,7 @@ tmp_int: .skip 8
     ldr x0, tmp_int
 .endm
 
+
 .macro read_str prompt
     adr x0, \prompt
     bl printf
@@ -96,12 +99,74 @@ tmp_int: .skip 8
 .endm
 
 
+
+.macro read_orders, records_to_read, FILE
+    ldr x0, =orders
+    mov x1, order_size_aligned
+    mov x2, \records_to_read
+    mov x3, \FILE
+    bl fread
+.endm
+
+
+
+//macro per leggere un int e salvarlo sulla variabile temporanea per poi essere letta
+.macro scan_filter n
+    adr x0, fmt_scan_int
+    adr x1, \n
+    bl scanf
+.endm
+
+
+.macro open_read_file, FILE
+adr x0, filename
+adr x1, read_mode
+bl fopen
+mov \FILE, x0
+.endm
+
+// legge i primi 4 byte del file, che indicano il numero di ordini a seguire
+.macro read_n_orders, FILE
+adr x0, n_orders // carichiamo l'indirizzo della variabile
+mov x1, #4      // leggiamo 4 bytes
+mov x2, #1      // 1 volta
+mov x3, \FILE    
+bl fread        // leggiamo i 4 bytes e li inseriamo nell'indirizzo di n_orders 
+.endm
+
+
+//macro da chiamare una volta finito di leggere o scrivere sul file
+.macro finish_read, FILE
+mov x0, \FILE
+bl fclose
+.endm
+
+
+// 3 macro per facilitare il print degli ordini
+.macro print_table_header
+    print_table_line
+    adr x0, fmt_menu_header     
+    bl printf
+    print_table_line
+.endm
+
+
+.macro print_menu_options
+    adr x0, fmt_menu_options    
+    bl printf
+.endm
+
+.macro print_table_line
+    adr x0, fmt_menu_line       
+    bl printf
+.endm
+
+
 .text
 .type main, %function
 .global main
 main:
     stp x29, x30, [sp, #-16]!
-
 
 
     adr x0, fmt_menu_title  // logo della compagnia
@@ -110,7 +175,11 @@ main:
 
     # load data from file
     menu_loop:
-        bl print_menu
+        bl print_orders
+    skip_print_orders:
+
+        // mostra tutte le possibili opzioni es: 0: esci, 1 aggiungi
+        print_menu_options
 
         read_int fmt_prompt_menu
 
@@ -120,47 +189,49 @@ main:
 
         cmp x0, #1
         bne no_aggiungi_ordine
-        #bl aggiungi_ordine
+            #bl aggiungi_ordine
         no_aggiungi_ordine:
 
         cmp x0, #2
         bne no_rimuovi_ordine
-        #bl rimuovi_ordine
+            #bl rimuovi_ordine
         no_rimuovi_ordine:
 
         cmp x0, #3
         bne no_prezzo_unitario_medio
-        #bl prezzo_unitario_medio
+            #bl prezzo_unitario_medio
         no_prezzo_unitario_medio:
 
         cmp x0, #4
         bne no_valore_complessivo_magazino
-        #bl valore_complessivo_magazino
+            #bl valore_complessivo_magazino
         no_valore_complessivo_magazino:
 
         cmp x0, #5
         bne no_quantita_totale_ordini
-        #bl quantita_totale_ordini
+            #bl quantita_totale_ordini
         no_quantita_totale_ordini:
 
         cmp x0, #6
-        bne no_spessore_medio
-        #bl spessore_medio
+            bne no_spessore_medio
+            #bl spessore_medio
         no_spessore_medio:
 
         cmp x0, #7
         bne no_filtro_maggiore_di
-        #bl filtro_maggiore_di
+            bl filtro_maggiore_di
+            b skip_print_orders
         no_filtro_maggiore_di:
 
         cmp x0, #8
         bne no_filtro_minore_di
-        #bl filtro_minore_di
+            #bl filtro_minore_di
+            b skip_print_orders
         no_filtro_minore_di:
 
         cmp x0, #9
         bne no_mostra_dundies
-        //bl dundies
+            //bl dundies
         no_mostra_dundies:
 
 
@@ -175,18 +246,14 @@ main:
 
 
 
-.type print_menu, %function
-print_menu:
+.type print_orders, %function
+print_orders:
     stp x29, x30, [sp, #-16]!
     stp x19, x20, [sp, #-16]!
     str x21, [sp, #-8]!
     
-    adr x0, fmt_menu_line       // linea separatrice
-    bl printf
-    adr x0, fmt_menu_header     // intestazione tabella
-    bl printf
-    adr x0, fmt_menu_line
-    bl printf
+    // intestazione tabella
+    print_table_header
 
     //inizio del corpo della tabella
     mov w19, #0
@@ -213,11 +280,87 @@ print_menu:
     adr x0, fmt_menu_line
     bl printf
 
-    adr x0, fmt_menu_options
-    bl printf
+    
     
     ldr x21, [sp], #8
     ldp x19, x20, [sp], #16
     ldp x29, x30, [sp], #16
     ret
-    .size print_menu, (. - print_menu)
+    .size print_orders, (. - print_orders)
+
+
+
+.type filtro_maggiore_di, %function
+.global filtro_maggiore_di
+filtro_maggiore_di:
+    stp x29, x30, [sp, #-16]!
+    stp x19, x20, [sp, #-16]!
+    stp x21, x22, [sp, #-16]!
+
+/*  non c'e' bisogno di leggere\scrivere il file se non si apportano modifiche
+
+    adr x0, filename
+    adr x1, read_mode
+    bl fopen
+
+    cmp x0, #0
+    beq end
+
+    mov x19, x0
+    read_n_orders
+    ldr w20, n_ord
+    read_orders
+    mov w21, #0
+*/
+
+
+    adr x0, fmt_num_int
+    bl printf
+    scan_filter tmp_int
+    ldr x22, tmp_int    // x = input("filtra ordini con quantita >= di: ")
+    
+
+    // intestazione tabella
+    print_table_header
+
+    ldr w20, n_orders
+    // inizio della tabella filtrata
+    filtro_maggiore_loop:
+        cmp w21, w20
+        beq end_filtro_maggiore
+
+        adr x0, orders
+        ldr w1, =order_size_aligned
+        madd x0, x1, x21, x0
+
+        // quantita = ordini[i].quantita        
+        ldr w2, [x0, offset_order_quantity]
+
+        add w21, w21, #1 //incremento i prima
+        cmp x2, x22
+
+        blt filtro_maggiore_loop
+
+            mov w1, w21            
+            add x2, x0, offset_order_name
+            ldr w3, [x0, offset_order_quantity]
+            ldr w4, [x0, offset_order_thickness]
+            ldr w5, [x0, offset_order_unit_price]
+            adr x0, fmt_menu_entry
+            bl printf
+        
+        b filtro_maggiore_loop    
+
+    end_filtro_maggiore:
+
+    adr x0, fmt_menu_line       
+    bl printf
+
+    mov w0, #0
+    ldp x21, x22, [sp], #16
+    ldp x19, x20, [sp], #16
+    ldp x29, x30, [sp], #16
+    ret
+    .size filtro_maggiore_di, (. - filtro_maggiore_di)
+
+        
