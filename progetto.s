@@ -20,7 +20,7 @@ fmt_menu_header:
 fmt_menu_entry:
     .asciz "|%3d | %-32s|  %-8d |  %-8d | %-8d        |\n"
 
-///////////
+///////
 fmt_menu_options:
     .ascii "\n1: Aggiungi ordine\n"
     .ascii "2: Elimina ordine\n"
