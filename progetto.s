@@ -37,7 +37,7 @@ fmt_prezzo_medio: .asciz "\nPrezzo unitario medio: %.2f\n\n"
 
 fmt_printf_val_storage: .asciz "Il valore complessivo magazino è: %d€\n\n"
 
-fmt_quantita_tot_ordini: .asciz "La quantità totale degli ordini è: %d\n\n"
+fmt_quantita_totale_ordini: .asciz "La quantità totale degli ordini effettuati è: %d unità\n"
 
 fmt_num_int: .asciz "Inserire il filtro di ricerca (maggione di questa quantità): "
 
@@ -390,41 +390,59 @@ valore_complessivo_magazino:
 
  quantita_totale_ordini:
     stp x29, x30, [sp, #-16]!
-
+    stp x19, x20, [sp, #-16]!
 
     mov x1, #0
-    ldr x2, n_orders
+    ldr w0, n_orders
+    mov x2, x0
+    adr x3, orders
 
-    //Se n_orders == 0 stampa direttamente fmt
-    cmp x2, #0
-    beq end_quantita_tot_ordini
+    add x4, x3, offset_order_quantity
+
+    
+    loop_quantità_totale_ordini:
+        sub x2, x2, #1
+
+        ldr x5, [x4]
+        add x1, x1, x5
+
+        add x4, x4, order_size_aligned
+
+        cmp x2, #0
+        bge loop_quantità_totale_ordini
 
 
-    loop_quantita_tot_ordini:
-          
 
 
-    end_quantita_tot_ordini:
+    adr x0, fmt_quantita_totale_ordini
+    bl printf    
 
-
-
-
-
-    //stampa
-    adr x0, fmt_quantita_tot_ordini
-    bl printf
-
+    ldp x19, x20, [sp], #16
     ldp x29, x30, [sp], #16
-    ret
-    .size quantita_totale_ordini, (. - quantita_totale_ordini)
+ .size quantita_totale_ordini, (. - quantita_totale_ordini)
 //-------------------------------------------------------------------------------------
 
 
+//OPZIONE 6
+//------------------------------------------------------------------------------------
+/* 
+ .type spessore_medio, %function
+ .global spessore_medio
+
+ spessore_medio:
+    stp x29, x30, [sp, #-16]!
 
 
 
 
 
+
+    
+
+    ldp x29, x30, [sp], #16
+ .size spessore_medio, (. - spessore_medio)
+//-------------------------------------------------------------------------------------
+*/
 
 
 
