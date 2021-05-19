@@ -20,7 +20,7 @@ fmt_menu_header:
 fmt_menu_entry:
     .asciz "|%3d | %-32s|  %-8d |  %-8d | %-8d        |\n"
 
-
+///////////
 fmt_menu_options:
     .ascii "\n1: Aggiungi ordine\n"
     .ascii "2: Elimina ordine\n"
@@ -36,6 +36,8 @@ fmt_menu_options:
 fmt_prezzo_medio: .asciz "\nPrezzo unitario medio: %.2f\n\n"
 
 fmt_printf_val_storage: .asciz "Il valore complessivo magazino è: %d€\n\n"
+
+fmt_quantita_tot_ordini: .asciz "La quantità totale degli ordini è: %d\n\n"
 
 fmt_num_int: .asciz "Inserire il filtro di ricerca (maggione di questa quantità): "
 
@@ -216,7 +218,7 @@ main:
 
         cmp x0, #5
         bne no_quantita_totale_ordini
-            #bl quantita_totale_ordini
+            bl quantita_totale_ordini
         no_quantita_totale_ordini:
 
         cmp x0, #6
@@ -380,6 +382,54 @@ valore_complessivo_magazino:
 
     ret
 .size valore_complessivo_magazino, (. - valore_complessivo_magazino)
+
+//OPZIONE 5
+//------------------------------------------------------------------------------------
+ .type quantita_totale_ordini, %function
+ .global quantita_totale_ordini
+
+ quantita_totale_ordini:
+    stp x29, x30, [sp, #-16]!
+
+
+    mov x1, #0
+    ldr x2, n_orders
+
+    //Se n_orders == 0 stampa direttamente fmt
+    cmp x2, #0
+    beq end_quantita_tot_ordini
+
+
+    loop_quantita_tot_ordini:
+          
+
+
+    end_quantita_tot_ordini:
+
+
+
+
+
+    //stampa
+    adr x0, fmt_quantita_tot_ordini
+    bl printf
+
+    ldp x29, x30, [sp], #16
+    ret
+    .size quantita_totale_ordini, (. - quantita_totale_ordini)
+//-------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
 
 // OPZIONE 7 - 8
 
