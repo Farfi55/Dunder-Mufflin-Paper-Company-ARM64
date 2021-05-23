@@ -40,6 +40,8 @@ fmt_quantita_totale_ordini: .asciz "La quantità totale degli ordini effettuati 
 
 fmt_num_int: .asciz "Inserire il filtro di ricerca: "
 
+fmt_exit_goodbye: .asciz "\nThat's what she said   -Micheal\n"
+
 fmt_new_line: .asciz "\n"
 
 fmt_scan_int: .asciz "%d"
@@ -190,6 +192,7 @@ main:
         // mostra tutte le possibili opzioni es: 0: esci, 1 aggiungi
         print_menu_options
 
+        // leggi da input la scelta dell'utente
         read_int fmt_prompt_menu
 
         cmp x0, #0
@@ -198,7 +201,7 @@ main:
 
         cmp x0, #1
         bne no_aggiungi_ordine
-        bl aggiungi_ordine
+            bl aggiungi_ordine
         
         no_aggiungi_ordine:
 
@@ -230,18 +233,18 @@ main:
         cmp x0, #7
         bne no_filtro_maggiore_di
 
-            mov x0, #1 
+            mov x0, #1  // filtro in modalita' maggiore
             bl filtro_quantita
 
-            b skip_print_orders
+            b skip_print_orders // per evitare di stampare 2 volte gli ordini
         no_filtro_maggiore_di:
 
         cmp x0, #8
         bne no_filtro_minore_di
-            mov x0, #0
+            mov x0, #0  // filtro in modalita' minore
             bl filtro_quantita
 
-            b skip_print_orders
+            b skip_print_orders // per evitare di stampare 2 volte gli ordini
         no_filtro_minore_di:
 
         cmp x0, #9
@@ -253,6 +256,8 @@ main:
         b menu_loop
     end_menu_loop:
 
+    adr x0, fmt_exit_goodbye
+    bl printf
 
     mov w0, #0
     ldp x29, x30, [sp], #16
