@@ -20,7 +20,6 @@ fmt_menu_header:
 fmt_menu_entry:
     .asciz "|%3d | %-32s|  %-8d |  %-8d | %-8d        |\n"
 
-///////
 fmt_menu_options:
     .ascii "\n1: Aggiungi ordine\n"
     .ascii "2: Elimina ordine\n"
@@ -37,9 +36,11 @@ fmt_prezzo_medio: .asciz "\nPrezzo unitario medio: %.2f\n\n"
 
 fmt_printf_val_storage: .asciz "Il valore complessivo magazino è: %d€\n\n"
 
-fmt_quantita_totale_ordini: .asciz "La quantità totale degli ordini effettuati è: %d unità\n"
+fmt_quantita_totale_ordini: .asciz "La quantità totale degli ordini effettuati è: %d unità\n\n"
 
-fmt_num_int: .asciz "Inserire il filtro di ricerca (maggione di questa quantità): "
+fmt_num_int: .asciz "Inserire il filtro di ricerca: "
+
+fmt_new_line: .asciz "\n"
 
 fmt_scan_int: .asciz "%d"
 fmt_scan_str: .asciz "%127s"
@@ -489,7 +490,11 @@ filtro_quantita:
     bl printf
     scan_filter tmp_int
     ldr x22, tmp_int    // x = input("filtra ordini con quantita >= di: ")
-    
+
+
+
+    adr x0, fmt_new_line // vado a capo di nuovo   
+    bl printf        
 
     // intestazione tabella
     print_table_header
