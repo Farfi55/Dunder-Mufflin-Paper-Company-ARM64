@@ -153,7 +153,7 @@ bl fclose
 .endm
 
 
-// 3 macro per facilitare il print degli ordini
+// alcune macro per facilitare il print degli ordini
 .macro print_table_header
     print_table_line
     adr x0, fmt_menu_header     
@@ -172,7 +172,14 @@ bl fclose
     bl printf
 .endm
 
+.macro print_new_line
+    adr x0, fmt_new_line       
+    bl printf
+.endm
 
+
+// MAIN
+//------------------------------------------------------------------------------------
 .text
 .type main, %function
 .global main
@@ -263,15 +270,20 @@ main:
     ldp x29, x30, [sp], #16
     ret
     .size main, (. - main)
+//------------------------------------------------------------------------------------
 
 
 
+
+//-------------------------------------------------------------------------
 .type print_orders, %function
 print_orders:
     stp x29, x30, [sp, #-16]!
     stp x19, x20, [sp, #-16]!
     str x21, [sp, #-8]!
     
+    print_new_line
+
     // intestazione tabella
     print_table_header
 
@@ -307,10 +319,80 @@ print_orders:
     ldp x29, x30, [sp], #16
     ret
     .size print_orders, (. - print_orders)
+//------------------------------------------------------------------------------------
 
 
 
-// OPZIONE 3 - 4
+// OPZIONE 1
+//-------------------------------------------------------------------------
+.type aggiungi_ordine, %function
+aggiungi_ordine:
+    stp x29, x30, [sp, #-16]!
+    stp x19, x20, [sp, #-16]!
+
+    ldr x19, n_orders           //Numero di item presenti 
+    adr x20, orders             //Indirizzo dell'array
+    mov x0, order_size_aligned  
+    mul x0, x19, x0             //Calcoli la grandezza array (al momento della chiamata)                    
+    add x20, x20, x0            //Punti l'indirizzo dove cominciare ad inserire i dati
+
+    cmp x19, max_orders
+    bge fail_add_order         //Se l'array e' pieno
+
+        read_str fmt_name
+        save_to x20, offset_order_name, size_order_name
+
+        read_int fmt_quantity
+        str w0, [x20, offset_order_quantity]
+
+        read_int fmt_thickness
+        str w0, [x20, offset_order_thickness]
+
+        read_int fmt_unit_price
+        str w0, [x20, offset_order_unit_price]
+    
+        add x19, x19, #1
+        adr x20, n_orders
+        str x19, [x20]
+
+        //bl save_data  !!!
+
+        b end_add_order
+
+    fail_add_order:
+    adr x0, fmt_fail_add_order
+    bl printf
+
+    end_add_order:
+
+    ldp x19, x20, [sp], #16
+    ldp x29, x30, [sp], #16
+    ret
+.size add_order, (. - aggiungi_ordine)
+//------------------------------------------------------------------------------------
+
+
+
+ 
+// OPZIONE 2
+//-------------------------------------------------------------------------       
+/*
+.type rimuovi_ordine, %function
+rimuovi_ordine:
+    stp x29, x30, [sp, #-16]!
+
+
+    ldp x29, x30, [sp], #16
+    ret
+.size rimuovi_ordine, (. - rimuovi_ordine)
+ */
+//------------------------------------------------------------------------------------
+
+
+
+
+// OPZIONE 3
+//-------------------------------------------------------------------------
 .type prezzo_unitario_medio, %function
 .global prezzo_unitario_medio
 prezzo_unitario_medio:
@@ -347,8 +429,11 @@ prezzo_unitario_medio:
 
     ret
 .size prezzo_unitario_medio, (. - prezzo_unitario_medio)
+//------------------------------------------------------------------------------------
 
 
+// OPZIONE 4
+//-------------------------------------------------------------------------
 .type valore_complessivo_magazino, %function
 .global valore_complessivo_magazino
 valore_complessivo_magazino:
@@ -388,6 +473,10 @@ valore_complessivo_magazino:
 
     ret
 .size valore_complessivo_magazino, (. - valore_complessivo_magazino)
+//------------------------------------------------------------------------------------
+
+
+
 
 //OPZIONE 5
 //------------------------------------------------------------------------------------
@@ -430,6 +519,7 @@ valore_complessivo_magazino:
 //-------------------------------------------------------------------------------------
 
 
+
 //OPZIONE 6
 //------------------------------------------------------------------------------------
 /* 
@@ -447,16 +537,17 @@ valore_complessivo_magazino:
     
 
     ldp x29, x30, [sp], #16
- .size spessore_medio, (. - spessore_medio)
-//-------------------------------------------------------------------------------------
+    ret
+ .size spessore_medio, (. - spessore_medio) 
 */
+//------------------------------------------------------------------------------------
 
 
 
 
 
-
-// OPZIONE 7 - 8
+// OPZIONE 7 - 8 
+//-------------------------------------------------------------------------
 
 // se c'e' 1 su x0 mostra solo gli ordini con 
 // x0 == 1: quantita maggiore
@@ -554,49 +645,22 @@ filtro_quantita:
     ldp x29, x30, [sp], #16
     ret
     .size filtro_quantita, (. - filtro_quantita)
+//------------------------------------------------------------------------------------
 
-.type aggiungi_ordine, %function
-aggiungi_ordine:
+
+
+
+// OPZIONE 9
+//-------------------------------------------------------------------------
+/*
+.type dundies, %function
+dundies:
     stp x29, x30, [sp, #-16]!
-    stp x19, x20, [sp, #-16]!
 
-    ldr x19, n_orders           //Numero di item presenti 
-    adr x20, orders             //Indirizzo dell'array
-    mov x0, order_size_aligned  
-    mul x0, x19, x0             //Calcoli la grandezza array (al momento della chiamata)                    
-    add x20, x20, x0            //Punti l'indirizzo dove cominciare ad inserire i dati
 
-    cmp x19, max_orders
-    bge fail_add_order         //Se l'array e' pieno
+    ldp x29, x30, [sp], #16
+    ret
+.size dundies, (. - dundies)
+ */
+//------------------------------------------------------------------------------------
 
-        read_str fmt_name
-        save_to x20, offset_order_name, size_order_name
-
-        read_int fmt_quantity
-        str w0, [x20, offset_order_quantity]
-
-        read_int fmt_thickness
-        str w0, [x20, offset_order_thickness]
-
-        read_int fmt_unit_price
-        str w0, [x20, offset_order_unit_price]
-    
-        add x19, x19, #1
-        adr x20, n_orders
-        str x19, [x20]
-
-        //bl save_data  !!!
-
-        b end_add_order
-
-fail_add_order:
-adr x0, fmt_fail_add_order
-bl printf
-
-end_add_order:
-
-ldp x19, x20, [sp], #16
-ldp x29, x30, [sp], #16
-ret
-.size add_order, (. - aggiungi_ordine)
-        
