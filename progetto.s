@@ -32,11 +32,11 @@ fmt_menu_options:
     .ascii "9: Mostra dundies del 2021\n"
     .asciz "0: Esci\n"
 
-fmt_prezzo_medio: .asciz "\nPrezzo unitario medio: %.2f\n\n"
+fmt_prezzo_medio: .asciz "\nPrezzo unitario medio: %.2f\n"
 
-fmt_printf_val_storage: .asciz "Il valore complessivo magazino è: %d€\n\n"
+fmt_printf_val_storage: .asciz "Il valore complessivo magazino è: %d€\n"
 
-fmt_quantita_totale_ordini: .asciz "La quantità totale degli ordini effettuati è: %d unità\n\n"
+fmt_quantita_totale_ordini: .asciz "La quantità totale degli ordini effettuati è: %d unità\n"
 
 fmt_num_int: .asciz "Inserire il filtro di ricerca: "
 
@@ -155,6 +155,7 @@ bl fclose
 
 // alcune macro per facilitare il print degli ordini
 .macro print_table_header
+    print_new_line
     print_table_line
     adr x0, fmt_menu_header     
     bl printf
@@ -274,7 +275,7 @@ main:
 
 
 
-
+// MOSTRA TABELLA
 //-------------------------------------------------------------------------
 .type print_orders, %function
 print_orders:
@@ -282,8 +283,6 @@ print_orders:
     stp x19, x20, [sp, #-16]!
     str x21, [sp, #-8]!
     
-    print_new_line
-
     // intestazione tabella
     print_table_header
 
@@ -309,8 +308,7 @@ print_orders:
     end_print_orders_loop:
     //fine del corpo della tabella
 
-    adr x0, fmt_menu_line
-    bl printf
+    print_table_line
 
     
     
@@ -588,10 +586,6 @@ filtro_quantita:
     ldr x22, tmp_int    // x = input("filtra ordini con quantita >= di: ")
 
 
-
-    adr x0, fmt_new_line // vado a capo di nuovo   
-    bl printf        
-
     // intestazione tabella
     print_table_header
 
@@ -615,12 +609,12 @@ filtro_quantita:
 
         filtro_maggiore_di:
         cmp x2, x22
-        blt filtro_quantita_loop // se la quantita' e' minore, saltiamo l'ordine
+        blt filtro_quantita_loop // se la quantita' e' minore, saltiamo questo ordine
             b filter_print_order
 
         filtro_minore_di:
         cmp x2, x22
-        bgt filtro_quantita_loop // se la quantita' e' maggiore, saltiamo l'ordine
+        bgt filtro_quantita_loop // se la quantita' e' maggiore, saltiamo questo ordine
 
         filter_print_order:
             mov w1, w21            
@@ -635,8 +629,7 @@ filtro_quantita:
 
     end_filtro_quantita:
 
-    adr x0, fmt_menu_line       
-    bl printf
+    print_table_line
 
     mov w0, #0
     ldp x23, x24, [sp], #16
