@@ -45,7 +45,8 @@ fmt_exit_goodbye: .asciz "\nThat's what she said   -Micheal\n"
 fmt_new_line: .asciz "\n"
 
 fmt_scan_int: .asciz "%d"
-fmt_scan_str: .asciz "%128[0-9a-zA-Z ]"
+fmt_scan_str: .asciz "%127s"
+fmt_id: .asciz "ID: "
 
 fmt_prompt_menu: .asciz "> "
 
@@ -54,6 +55,7 @@ fmt_quantity: .asciz "Quantita': "
 fmt_thickness: .asciz "Spessore: "
 fmt_unit_price: .asciz "Prezzo unitario: "
 fmt_fail_add_order: .asciz "Errore: ci sono troppi ordini!"
+fmt_fail_remove_order: .asciz "Errore: non ci sono ordini"
 .align 2
 
 .data
@@ -215,7 +217,7 @@ main:
 
         cmp x0, #2
         bne no_rimuovi_ordine
-            #bl rimuovi_ordine
+            bl rimuovi_ordine
         no_rimuovi_ordine:
 
         cmp x0, #3
@@ -374,16 +376,50 @@ aggiungi_ordine:
  
 // OPZIONE 2
 //-------------------------------------------------------------------------       
-/*
 .type rimuovi_ordine, %function
 rimuovi_ordine:
     stp x29, x30, [sp, #-16]!
+    
+    ldr x0, n_orders
+    cmp x0, xzr
+    bne rimuovi_ordine_noerr
+        adr x0, fmt_fail_remove_order
+        bl printf
+        b end_rimuovi_ordine
+    rimuovi_ordine_noerr:
 
+    read_int fmt_id
+    cmp x0, #1
+    blt end_rimuovi_ordine
+    ldr x1, n_orders
+    cmp x0, x1
+    bgt end_rimuovi_ordine
+    sub x0, x0, #1
 
+    mov x8, order_size_aligned
+    mul x9, x0, x8 // id * order_size_aligned
+    adr x10, orders
+    add x0, x10, x9 // dest: orders + id * order_size_aligned
+    add x1, x0, x8 // src: orders + id * order_size_aligned + order_size_aligned
+    ldr x11, n_orders
+    mul x11, x11, x8 // n_orders * order_size_aligned
+    add x9, x9, x8 // id * order_size_aligned + order_size_aligned
+    sub x2, x11, x9 // size: (n_orders * order_size_aligned) - (id * order_size_aligned + order_size_aligned))
+    bl memcpy
+    // memcpy(dest: orders + id * order_size_aligned,
+    //        src: orders + id * order_size_aligned + order_size_aligned, 
+    //        size: (n_orders * order_size_aligned) - (orders + id * order_size_aligned + order_size_aligned))
+
+    ldr x0, n_orders
+    sub x0, x0, #1
+    adr x1, n_orders
+    str x0, [x1]
+
+end_rimuovi_ordine:
     ldp x29, x30, [sp], #16
     ret
-.size rimuovi_ordine, (. - rimuovi_ordine)
- */
+    .size rimuovi_ordine, (. - rimuovi_ordine)
+
 //------------------------------------------------------------------------------------
 
 
