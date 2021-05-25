@@ -44,6 +44,8 @@ fmt_exit_goodbye: .asciz "\nThat's what she said   -Micheal\n"
 
 fmt_errore_zero_ordini: .asciz "ERRORE, non puoi fare la media di 0 ordini\naggiungi qualche ordine!\n"
 
+fmt_error_save_data: .asciz "\nImpossibile salvere i dati.\n\n"
+
 fmt_new_line: .asciz "\n"
 
 fmt_scan_int: .asciz "%d"
@@ -191,9 +193,14 @@ bl fclose
 main:
     stp x29, x30, [sp, #-16]!
 
+    bl read_data
+
 
     adr x0, fmt_menu_title  // logo della compagnia
     bl printf
+
+    //bl check_file //Controlliamo se il file esiste
+
 
 
     # load data from file
@@ -286,7 +293,7 @@ main:
 
 
 // MOSTRA TABELLA
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 .type print_orders, %function
 print_orders:
     stp x29, x30, [sp, #-16]!
@@ -329,6 +336,133 @@ print_orders:
     .size print_orders, (. - print_orders)
 //------------------------------------------------------------------------------------
 
+// CHECK FILE
+//----------------------------------
+.type check_file, %function
+check_file:
+    stp x29, x30, [sp, #-16]!
+    str x20, [sp, #-8]!
+    
+    adr x0, filename
+    adr x1, read_mode
+    bl fopen
+    
+    cbnz x0, _exit_check_file
+
+    //In caso il file non esiste andiamo a creare un file vuoto e lo inizializiamo a zero
+
+    adr x0, filename
+    adr x1, write_mode
+    bl fopen
+
+    mov x20, x0
+
+    adr x0, n_orders
+    mov x1, #4
+    mov x2, #1
+    mov x3, x20
+    bl fwrite
+
+    mov x0, x20
+    bl fclose
+
+    _exit_check_file:
+    
+    ldr x20, [sp], #8
+    ldp x29, x30, [sp], #16
+    ret
+.size check_file, (. - check_file)
+//----------------------------------
+
+// WRITE DATA
+//----------------------------------
+.type write_data, %function
+write_data:
+    stp x29, x30, [sp, #-16]!
+    str x20, [sp, #-8]!
+    
+    //Creiamo il file
+    adr x0, filename
+    adr x1, read_mode
+    bl fopen
+    mov x20, x0
+
+    adr x0, n_orders
+    mov x1, #4
+    mov x2, #1
+    mov x3, x20
+    bl fwrite
+
+    adr x0, orders
+    mov x1, order_size_aligned
+    mov x2, max_orders
+    mov x3, x20
+    bl fwrite
+
+    mov x0, x20
+    bl fclose
+
+    b end_write_data
+
+    error_write_data:
+    
+    adr x0, fmt_error_save_data
+    bl printf
+
+    end_write_data:
+    
+    ldr x20, [sp], #8
+    ldp x29, x30, [sp], #16
+    ret
+.size write_data, (. - write_data)
+//----------------------------------
+
+
+
+
+// READ DATA
+//----------------------------------
+.type read_data, %function
+read_data:
+    stp x29, x30, [sp, #-16]!
+    str x20, [sp, #-8]!
+
+    adr x0, filename
+    adr x1, read_mode
+    bl fopen
+    mov x20, x0
+    
+    cbz x0, read_data_error //se x0 == 0 significa che non ha trovato il file
+
+    ldr x0, =n_orders // carichiamo l'indirizzo della variabile
+    mov x1, #4      // leggiamo 4 bytes
+    mov x2, #1      // 1 volta
+    mov x3, x20   
+    bl fread  
+
+
+    adr x0, orders
+    mov x1, order_size_aligned
+    mov x2, max_orders
+    mov x3, x20
+    bl fread
+
+
+    mov x0, x20
+    bl fclose
+    
+        
+    end_read_data:
+
+    mov w0, #0
+    ldr x20, [sp], #8
+    ldp x29, x30, [sp], #16
+    ret
+    .size read_data, (. - read_data)
+//----------------------------------
+
+
+
 
 
 // OPZIONE 1
@@ -363,7 +497,7 @@ aggiungi_ordine:
         adr x20, n_orders
         str x19, [x20]
 
-        //bl save_data  !!!
+        bl write_data
 
         b end_add_order
 
@@ -423,6 +557,8 @@ rimuovi_ordine:
     sub x0, x0, #1
     adr x1, n_orders
     str x0, [x1]
+
+    bl write_data
 
 end_rimuovi_ordine:
     ldp x29, x30, [sp], #16
