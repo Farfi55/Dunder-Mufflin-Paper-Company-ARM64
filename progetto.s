@@ -45,7 +45,7 @@ fmt_exit_goodbye: .asciz "\nThat's what she said   -Micheal\n"
 fmt_new_line: .asciz "\n"
 
 fmt_scan_int: .asciz "%d"
-fmt_scan_str: .asciz "%127s"
+fmt_scan_str: .asciz "%128[0-9a-zA-Z ]"
 
 fmt_prompt_menu: .asciz "> "
 
