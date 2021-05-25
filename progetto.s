@@ -385,31 +385,33 @@ write_data:
     
     //Creiamo il file
     adr x0, filename
-    adr x1, read_mode
+    adr x1, write_mode
     bl fopen
     mov x20, x0
 
-    adr x0, n_orders
-    mov x1, #4
-    mov x2, #1
-    mov x3, x20
-    bl fwrite
+    cbz x0, error_write_data
 
-    adr x0, orders
-    mov x1, order_size_aligned
-    mov x2, max_orders
-    mov x3, x20
-    bl fwrite
+        adr x0, n_orders
+        mov x1, #4
+        mov x2, #1
+        mov x3, x20
+        bl fwrite
 
-    mov x0, x20
-    bl fclose
+        adr x0, orders
+        mov x1, order_size_aligned
+        mov x2, max_orders
+        mov x3, x20
+        bl fwrite
 
-    b end_write_data
+        mov x0, x20
+        bl fclose
+
+        b end_write_data
 
     error_write_data:
     
-    adr x0, fmt_error_save_data
-    bl printf
+        adr x0, fmt_error_save_data
+        bl printf
 
     end_write_data:
     
@@ -434,7 +436,7 @@ read_data:
     bl fopen
     mov x20, x0
     
-    cbz x0, read_data_error //se x0 == 0 significa che non ha trovato il file
+    cbz x0, end_read_data //se x0 == 0 significa che non ha trovato il file
 
     ldr x0, =n_orders // carichiamo l'indirizzo della variabile
     mov x1, #4      // leggiamo 4 bytes
@@ -725,7 +727,7 @@ valore_complessivo_magazino:
 
 //OPZIONE 6
 //------------------------------------------------------------------------------------
-/* 
+
  .type spessore_medio, %function
  .global spessore_medio
 
@@ -762,7 +764,7 @@ valore_complessivo_magazino:
 
     ret
  .size spessore_medio, (. - spessore_medio) 
-*/
+
 //------------------------------------------------------------------------------------
 
 
