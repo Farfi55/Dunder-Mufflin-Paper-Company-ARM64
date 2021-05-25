@@ -212,32 +212,37 @@ main:
         cmp x0, #1
         bne no_aggiungi_ordine
             bl aggiungi_ordine
-        
+            b menu_loop
         no_aggiungi_ordine:
 
         cmp x0, #2
         bne no_rimuovi_ordine
             bl rimuovi_ordine
+            b menu_loop
         no_rimuovi_ordine:
 
         cmp x0, #3
         bne no_prezzo_unitario_medio
             bl prezzo_unitario_medio
+            b menu_loop
         no_prezzo_unitario_medio:
 
         cmp x0, #4
         bne no_valore_complessivo_magazino
             bl valore_complessivo_magazino
+            b menu_loop
         no_valore_complessivo_magazino:
 
         cmp x0, #5
         bne no_quantita_totale_ordini
             bl quantita_totale_ordini
+            b menu_loop
         no_quantita_totale_ordini:
 
         cmp x0, #6
             bne no_spessore_medio
             #bl spessore_medio
+            b menu_loop
         no_spessore_medio:
 
         cmp x0, #7
@@ -260,6 +265,7 @@ main:
         cmp x0, #9
         bne no_mostra_dundies
             //bl dundies
+            b menu_loop
         no_mostra_dundies:
 
 
@@ -364,6 +370,7 @@ aggiungi_ordine:
     bl printf
 
     end_add_order:
+    mov x0, #0
 
     ldp x19, x20, [sp], #16
     ldp x29, x30, [sp], #16
