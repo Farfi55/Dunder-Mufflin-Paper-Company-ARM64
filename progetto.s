@@ -42,6 +42,8 @@ fmt_num_int: .asciz "Inserire il filtro di ricerca: "
 
 fmt_exit_goodbye: .asciz "\nThat's what she said   -Micheal\n"
 
+fmt_errore_zero_ordini: .asciz "ERRORE, non puoi fare la media di 0 ordini\naggiungi qualche ordine!\n"
+
 fmt_new_line: .asciz "\n"
 
 fmt_scan_int: .asciz "%d"
@@ -370,8 +372,8 @@ aggiungi_ordine:
     bl printf
 
     end_add_order:
-    mov x0, #0
 
+    mov x0, #0
     ldp x19, x20, [sp], #16
     ldp x29, x30, [sp], #16
     ret
@@ -442,8 +444,10 @@ prezzo_unitario_medio:
 
     mov x1, xzr                             //Azzeriamo il registro (flaot) d1
 
-    ldr w0, n_orders                        //Carichiamo il valore di n_orders in x0
-    mov x2, x0                              
+    ldr x0, n_orders                        //Carichiamo il valore di n_orders in x0
+
+    mov x2, x0                             
+    cbz x0, prezzo_unitario_medio_zero_ordini  // se ci sono 0 ordini stampiamo un errore
 
     adr x3, orders                          //Inseriramo l'indirizzo di orders nel registro x3
     add x3, x3, offset_order_unit_price     //Sommiamo l'indirizzo precedentemente ottenuto con la posizione del dato da ottenere 
@@ -464,7 +468,15 @@ prezzo_unitario_medio:
 
     adr x0, fmt_prezzo_medio                //Stampiamo a video la media
     bl printf
+    b end_prezzo_unitario_medio
 
+    prezzo_unitario_medio_zero_ordini:
+    adr x0, fmt_errore_zero_ordini // quando ci sono 0 ordini
+    bl printf
+
+    end_prezzo_unitario_medio:
+
+    mov x0, #0
     ldp x19, x20, [sp], #16
     ldp x29, x30, [sp], #16
 
@@ -483,8 +495,11 @@ valore_complessivo_magazino:
 
     mov x1, xzr
 
-    ldr w0, n_orders                        //Carichiamo il valore di n_orders in x0
-    mov x2, x0                              
+    ldr x0, n_orders  //Carichiamo il valore di n_orders in x0
+
+    cbz x0, valore_complessivo_magazino_zero_ordini  // se ci sono 0 ordini stampiamo un errore
+                          
+    mov x2, x0                      
 
     adr x3, orders                          //Inseriramo l'indirizzo di orders nel registro x3
 
@@ -508,7 +523,15 @@ valore_complessivo_magazino:
 
     adr x0, fmt_printf_val_storage          //Stampiamo a video la media
     bl printf
+    b end_valore_complessivo_magazino
 
+    valore_complessivo_magazino_zero_ordini:
+    adr x0, fmt_errore_zero_ordini // quando ci sono 0 ordini
+    bl printf
+
+    end_valore_complessivo_magazino:
+
+    mov x0, #0
     ldp x19, x20, [sp], #16
     ldp x29, x30, [sp], #16
 
@@ -553,6 +576,7 @@ valore_complessivo_magazino:
     adr x0, fmt_quantita_totale_ordini
     bl printf    
 
+    mov x0, #0
     ldp x19, x20, [sp], #16
     ldp x29, x30, [sp], #16
     ret
@@ -576,7 +600,7 @@ valore_complessivo_magazino:
 
 
     
-
+    mov x0, #0
     ldp x29, x30, [sp], #16
     ret
  .size spessore_medio, (. - spessore_medio) 
@@ -693,7 +717,7 @@ filtro_quantita:
 dundies:
     stp x29, x30, [sp, #-16]!
 
-
+    mov x0, #0
     ldp x29, x30, [sp], #16
     ret
 .size dundies, (. - dundies)
