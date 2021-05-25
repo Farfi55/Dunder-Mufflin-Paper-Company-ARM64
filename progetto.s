@@ -38,6 +38,8 @@ fmt_printf_val_storage: .asciz "Il valore complessivo magazino è: %d€\n"
 
 fmt_quantita_totale_ordini: .asciz "La quantità totale degli ordini effettuati è: %d unità\n"
 
+fmt_printf_spessore_medio: .asciz "Lo spessore medio della carta è: %.2f mm\n" 
+
 fmt_num_int: .asciz "Inserire il filtro di ricerca: "
 
 fmt_exit_goodbye: .asciz "\nThat's what she said   -Micheal\n"
@@ -54,7 +56,7 @@ fmt_prompt_menu: .asciz "> "
 
 fmt_name: .asciz "Ordine: "
 fmt_quantity: .asciz "Quantita': "
-fmt_thickness: .asciz "Spessore: "
+fmt_thickness: .asciz "Spessore (mm): "
 fmt_unit_price: .asciz "Prezzo unitario: "
 fmt_fail_add_order: .asciz "Errore: ci sono troppi ordini!"
 fmt_fail_remove_order: .asciz "Errore: non ci sono ordini"
@@ -592,16 +594,36 @@ valore_complessivo_magazino:
  .global spessore_medio
 
  spessore_medio:
-    stp x29, x30, [sp, #-16]!
+    mov x1, #0
+    
+    ldr w0, n_orders
+    mov x2, x0
+    adr x3, orders
 
+    add x4, x3, offset_order_thickness
 
+    loop_spessore_medio:
+        sub x2, x2, #1           
 
+        ldr x5, [x4]                        
+        add x1, x1, x5 
 
+        add x4, x4, order_size_aligned
 
+        cmp x2, #0
+        bge loop_spessore_medio
+    
+    ucvtf d0, x0
+    ucvtf d2, x1
+    fdiv d1, d2, d1
+
+    adr x0, fmt_printf_spessore_medio
+    bl printf    
 
     
-    mov x0, #0
+    ldp x19, x20, [sp], #16
     ldp x29, x30, [sp], #16
+
     ret
  .size spessore_medio, (. - spessore_medio) 
 */
