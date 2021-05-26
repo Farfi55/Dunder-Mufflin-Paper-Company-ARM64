@@ -50,7 +50,6 @@ fmt_filtered_orders_lower:  .asciz "\nTABELLA FILTRATA: ordini con quantità <= 
 
 fmt_exit_goodbye: .asciz "\nThat's what she said   -Micheal\n"
 
-
 fmt_new_line: .asciz "\n"
 
 fmt_scan_int: .asciz "%d"
@@ -67,8 +66,8 @@ fmt_order_value:    .asciz "il valore di questo ordine è: %d€\n"
 
 // messaggi di errore
 fmt_fail_add_order:     .asciz "\nErrore: ragiunto il limite di ordini!\n\n"
-fmt_fail_remove_order:  .asciz "\nErrore: non ci sono ordini\n\n"
-fmt_fail_zero_ordini:   .asciz "\nErrore: non puoi fare la media di 0 ordini\naggiungi qualche ordine!\n\n"
+fmt_fail_remove_order:  .asciz "\nErrore: non ci sono ordini da eliminare\n\n"
+fmt_fail_zero_ordini:   .asciz "\nErrore: nessun ordine\naggiungi qualche ordine!\n\n"
 fmt_fail_save_data:     .asciz "\nErrore: Impossibile salvere i dati.\n\n"
 fmt_fail_menu_option:   .ascii "\nErrore: opzione non riconosciuta\n"
                         .asciz "le opzioni vanno da 0 a 9 (inclusi) come riportato sotto\n"
@@ -263,7 +262,7 @@ main:
 
         cmp x0, #6
             bne no_spessore_medio
-            #bl spessore_medio
+            bl spessore_medio
             b menu_loop
         no_spessore_medio:
 
@@ -755,45 +754,54 @@ valore_complessivo_magazino:
 
 
 //OPZIONE 6
-//------------------------------------------------------------------------------------
-
+//------------------------------------------------------------------------------------ 
+ 
  .type spessore_medio, %function
  .global spessore_medio
 
  spessore_medio:
-    mov x1, #0
-    
+    stp x29, x30, [sp, #-16]!
+    stp x19, x20, [sp, #-16]!
+
+    mov w1, #0
+
     ldr w0, n_orders
-    mov x2, x0
+    cbz w0, spessore_medio_zero_ordini // 0 ordini
+
+    mov w2, w0 
     adr x3, orders
 
-    add x4, x3, offset_order_thickness
 
-    loop_spessore_medio:
-        sub x2, x2, #1           
+    loop_spessore:
+        sub w2, w2, #1 //counter
+        
+        
+        ldr w4, [x3, offset_order_thickness]
+        add w1, w1, w4
+        add x3, x3, order_size_aligned
+        
+        cmp w2, #0 //condition
+        bge loop_spessore
 
-        ldr x5, [x4]                        
-        add x1, x1, x5 
-
-        add x4, x4, order_size_aligned
-
-        cmp x2, #0
-        bge loop_spessore_medio
-    
-    ucvtf d0, x0
-    ucvtf d2, x1
-    fdiv d1, d2, d1
+    ucvtf d1, w0
+    ucvtf d2, w1
+    fdiv d0, d2, d1
 
     adr x0, fmt_printf_spessore_medio
-    bl printf    
+    bl printf
 
-    
+    b end_spessore_medio
+    spessore_medio_zero_ordini:
+        adr x0, fmt_fail_zero_ordini
+        bl printf
+    end_spessore_medio:
+
+    mov x0, #0
     ldp x19, x20, [sp], #16
     ldp x29, x30, [sp], #16
 
     ret
- .size spessore_medio, (. - spessore_medio) 
-
+    .size spessore_medio, (. - spessore_medio) 
 //------------------------------------------------------------------------------------
 
 
