@@ -25,43 +25,54 @@ fmt_menu_options:
     .ascii "2: Elimina ordine\n"
     .ascii "3: Calcola prezzo unitario medio\n"
     .ascii "4: Calcola valore complessivo magazzino\n"
-    .ascii "5: Calcola quantita' totale ordini\n"
+    .ascii "5: Calcola quantità totale ordini\n"
     .ascii "6: Calcola spessore medio\n"
-    .ascii "7: Mostra ordini con quantita' maggiori di\n"
-    .ascii "8: Mostra ordini con quantita' minori di\n"
-    .ascii "9: Mostra dundies del 2021\n"
+    .ascii "7: Mostra ordini con quantità maggiori di\n"
+    .ascii "8: Mostra ordini con quantità minori di\n"
+    .ascii "9: Mostra dundies del 2021 (crediti)\n"
     .asciz "0: Esci\n"
 
-fmt_prezzo_medio: .asciz "\nPrezzo unitario medio: %.2f\n"
+fmt_prompt_menu: .asciz "> "
 
-fmt_printf_val_storage: .asciz "Il valore complessivo magazino è: %d€\n"
+fmt_prezzo_medio: .asciz "\nIl prezzo unitario medio è: %.2f€\n"
 
-fmt_quantita_totale_ordini: .asciz "La quantità totale degli ordini effettuati è: %d unità\n"
+fmt_printf_val_storage: .asciz "\nIl valore complessivo magazino è: %d€\n"
 
-fmt_printf_spessore_medio: .asciz "Lo spessore medio della carta è: %.2f mm\n" 
+fmt_quantita_totale_ordini: .asciz "\nLa quantità totale degli ordini effettuati è: %d unità\n"
+
+fmt_printf_spessore_medio: .asciz "\nLo spessore medio della carta è: %.2f mm\n" 
 
 fmt_num_int: .asciz "Inserire il filtro di ricerca: "
 
+fmt_filtered_orders_higher: .asciz "\nTABELLA FILTRATA: ordini con quantità >= %d"
+fmt_filtered_orders_lower:  .asciz "\nTABELLA FILTRATA: ordini con quantità <= %d"
+
+
 fmt_exit_goodbye: .asciz "\nThat's what she said   -Micheal\n"
 
-fmt_errore_zero_ordini: .asciz "ERRORE, non puoi fare la media di 0 ordini\naggiungi qualche ordine!\n"
-
-fmt_error_save_data: .asciz "\nImpossibile salvere i dati.\n\n"
 
 fmt_new_line: .asciz "\n"
 
 fmt_scan_int: .asciz "%d"
 fmt_scan_str: .asciz "%127s"
-fmt_id: .asciz "ID: "
+fmt_id: .asciz "Inserire ID (#) dell'ordine da eliminare: "
 
-fmt_prompt_menu: .asciz "> "
 
-fmt_name: .asciz "Ordine: "
-fmt_quantity: .asciz "Quantita': "
-fmt_thickness: .asciz "Spessore (mm): "
-fmt_unit_price: .asciz "Prezzo unitario: "
-fmt_fail_add_order: .asciz "Errore: ci sono troppi ordini!"
-fmt_fail_remove_order: .asciz "Errore: non ci sono ordini"
+fmt_input_order:    .asciz "\nInserisci i dati sull'ordine da aggiungere\n"
+fmt_order_name:     .asciz "Nome ordine: "
+fmt_quantity:       .asciz "Quantità: "
+fmt_thickness:      .asciz "Spessore (mm): "
+fmt_unit_price:     .asciz "Prezzo unitario: "
+fmt_order_value:    .asciz "il valore di questo ordine è: %d€\n"
+
+// messaggi di errore
+fmt_fail_add_order:     .asciz "\nErrore: ragiunto il limite di ordini!\n\n"
+fmt_fail_remove_order:  .asciz "\nErrore: non ci sono ordini\n\n"
+fmt_fail_zero_ordini:   .asciz "\nErrore: non puoi fare la media di 0 ordini\naggiungi qualche ordine!\n\n"
+fmt_fail_save_data:     .asciz "\nErrore: Impossibile salvere i dati.\n\n"
+fmt_fail_menu_option:   .ascii "\nErrore: opzione non riconosciuta\n"
+                        .asciz "le opzioni vanno da 0 a 9 (inclusi) come riportato sotto\n"
+                        
 .align 2
 
 .data
@@ -195,7 +206,7 @@ bl fclose
 main:
     stp x29, x30, [sp, #-16]!
 
-    bl read_data
+    bl read_data    // carichiamo le infomazioni della scorsa sessione
 
 
     adr x0, fmt_menu_title  // logo della compagnia
@@ -216,8 +227,8 @@ main:
         // leggi da input la scelta dell'utente
         read_int fmt_prompt_menu
 
-        cmp x0, #0
-        beq end_menu_loop
+        cmp x0, #0          // esci fuori dal loop
+        beq end_menu_loop 
         
 
         cmp x0, #1
@@ -259,7 +270,7 @@ main:
         cmp x0, #7
         bne no_filtro_maggiore_di
 
-            mov x0, #1  // filtro in modalita' maggiore
+            mov x0, #1  // filtro in modalità maggiore
             bl filtro_quantita
 
             b skip_print_orders // per evitare di stampare 2 volte gli ordini
@@ -267,7 +278,7 @@ main:
 
         cmp x0, #8
         bne no_filtro_minore_di
-            mov x0, #0  // filtro in modalita' minore
+            mov x0, #0  // filtro in modalità minore
             bl filtro_quantita
 
             b skip_print_orders // per evitare di stampare 2 volte gli ordini
@@ -279,8 +290,11 @@ main:
             b menu_loop
         no_mostra_dundies:
 
+        opzione_non_riconosciuta:
+            adr x0, fmt_fail_menu_option 
+            bl printf // opzione invalida, mostriamo un messaggio errore   
+            b menu_loop
 
-        b menu_loop
     end_menu_loop:
 
     adr x0, fmt_exit_goodbye
@@ -410,7 +424,7 @@ write_data:
 
     error_write_data:
     
-        adr x0, fmt_error_save_data
+        adr x0, fmt_fail_save_data
         bl printf
 
     end_write_data:
@@ -475,6 +489,8 @@ read_data:
 aggiungi_ordine:
     stp x29, x30, [sp, #-16]!
     stp x19, x20, [sp, #-16]!
+    stp x21, x22, [sp, #-16]!
+
 
     ldr x19, n_orders           //Numero di item presenti 
     adr x20, orders             //Indirizzo dell'array
@@ -483,25 +499,35 @@ aggiungi_ordine:
     add x20, x20, x0            //Punti l'indirizzo dove cominciare ad inserire i dati
 
     cmp x19, max_orders
-    bge fail_add_order         //Se l'array e' pieno
+    bge fail_add_order         //Se l'array è pieno
 
-        read_str fmt_name
+        adr x0, fmt_input_order
+        bl printf
+
+        read_str fmt_order_name
         save_to x20, offset_order_name, size_order_name
 
         read_int fmt_quantity
         str w0, [x20, offset_order_quantity]
+        mov w21, w0     // salviamo si w21 la quantità per calcolare il valore dell'ordine
 
         read_int fmt_thickness
         str w0, [x20, offset_order_thickness]
 
         read_int fmt_unit_price
         str w0, [x20, offset_order_unit_price]
+        mov w22, w0     // salviamo si w22 il prezzo unitario per calcolare il valore dell'ordine
     
-        add x19, x19, #1
+        add x19, x19, #1 // aumentiamo il numero di ordini nell'array
         adr x20, n_orders
-        str x19, [x20]
+        str x19, [x20]  // salviamo il nuovo numero di ordini
 
+        // salvimao i cambiamenti appena apportati agli ordini
         bl write_data
+
+        adr x0, fmt_order_value
+        mul w1, w21, w22 //calcoliamo il valore dell'ordine
+        bl printf
 
         b end_add_order
 
@@ -512,6 +538,7 @@ aggiungi_ordine:
     end_add_order:
 
     mov x0, #0
+    ldp x21, x22, [sp], #16
     ldp x19, x20, [sp], #16
     ldp x29, x30, [sp], #16
     ret
@@ -562,6 +589,8 @@ rimuovi_ordine:
     adr x1, n_orders
     str x0, [x1]
 
+
+    // salvimao i cambiamenti appena apportati agli ordini
     bl write_data
 
 end_rimuovi_ordine:
@@ -611,7 +640,7 @@ prezzo_unitario_medio:
     b end_prezzo_unitario_medio
 
     prezzo_unitario_medio_zero_ordini:
-    adr x0, fmt_errore_zero_ordini // quando ci sono 0 ordini
+    adr x0, fmt_fail_zero_ordini // quando ci sono 0 ordini
     bl printf
 
     end_prezzo_unitario_medio:
@@ -666,7 +695,7 @@ valore_complessivo_magazino:
     b end_valore_complessivo_magazino
 
     valore_complessivo_magazino_zero_ordini:
-    adr x0, fmt_errore_zero_ordini // quando ci sono 0 ordini
+    adr x0, fmt_fail_zero_ordini // quando ci sono 0 ordini
     bl printf
 
     end_valore_complessivo_magazino:
@@ -774,7 +803,7 @@ valore_complessivo_magazino:
 // OPZIONE 7 - 8 
 //-------------------------------------------------------------------------
 
-// se c'e' 1 su x0 mostra solo gli ordini con 
+// se c'è 1 su x0 mostra solo gli ordini con 
 // x0 == 1: quantita maggiore
 // x0 == 0: quantita minore
 .type filtro_quantita, %function
@@ -784,33 +813,25 @@ filtro_quantita:
     stp x19, x20, [sp, #-16]!
     stp x21, x22, [sp, #-16]!
     stp x23, x24, [sp, #-16]!
-/*  non c'e' bisogno di leggere\scrivere il file se non si apportano modifiche
-
-    adr x0, filename
-    adr x1, read_mode
-    bl fopen
-
-    cmp x0, #0
-    beq end
-
-    mov x19, x0
-    read_n_orders
-    ldr w20, n_ord
-    read_orders
-    mov w21, #0
-*/
-
 
     //salvo la scelta tra maggiore o minore su x23, per riepilogare
     // x0 == 1: mostra ordini con quantita maggiore
     // x0 == 0: mostra ordini con quantita minore
-    mov x23, x0  
 
+    mov x23, x0      
 
-    adr x0, fmt_num_int
+    read_int fmt_num_int   // x = input("filtra ordini con quantita >= di: ")
+    mov x22, x0 
+    mov w1, w0   
+
+    cbz x23, filter_lower_than
+    filter_higher_than:
+        adr x0, fmt_filtered_orders_higher
+        b filter_end
+    filter_lower_than:
+        adr x0, fmt_filtered_orders_lower
+    filter_end:
     bl printf
-    scan_filter tmp_int
-    ldr x22, tmp_int    // x = input("filtra ordini con quantita >= di: ")
 
 
     // intestazione tabella
@@ -836,12 +857,12 @@ filtro_quantita:
 
         filtro_maggiore_di:
         cmp x2, x22
-        blt filtro_quantita_loop // se la quantita' e' minore, saltiamo questo ordine
+        blt filtro_quantita_loop // se la quantità è minore, saltiamo questo ordine
             b filter_print_order
 
         filtro_minore_di:
         cmp x2, x22
-        bgt filtro_quantita_loop // se la quantita' e' maggiore, saltiamo questo ordine
+        bgt filtro_quantita_loop // se la quantità è maggiore, saltiamo questo ordine
 
         filter_print_order:
             mov w1, w21            
