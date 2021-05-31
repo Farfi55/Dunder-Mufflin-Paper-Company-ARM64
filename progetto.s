@@ -47,6 +47,15 @@ fmt_num_int: .asciz "Inserire il filtro di ricerca: "
 fmt_filtered_orders_higher: .asciz "\nTABELLA FILTRATA: ordini con quantità >= %d"
 fmt_filtered_orders_lower:  .asciz "\nTABELLA FILTRATA: ordini con quantità <= %d"
 
+fmt_dundies: 
+    .ascii "\nQuest'anno i Dundies sono stati vinti da:\n"
+    .ascii "Matteo Aggazio\n"
+    .ascii "Marco Duca\n"
+    .ascii "Alessio Farfaglia\n"
+    .ascii "Francesco Gallo\n"
+    .ascii "Lorenzo Grillo\n"
+    .ascii "Pasquale Tudda\n"
+    .asciz "Francesco Vecchio\n"
 
 fmt_exit_goodbye: .asciz "\nThat's what she said   -Micheal\n"
 
@@ -93,7 +102,7 @@ n_orders: .word 0
 .bss
 tmp_str: .skip 128
 tmp_int: .skip 8
-orders: .skip order_size_aligned * max_orders    //"Scatola" che andiamo a riempire con i dati
+orders: .skip order_size_aligned * max_orders    //La "scatola" che andiamo a riempire con i dati
 
 .macro read_int prompt
     adr x0, \prompt
@@ -285,7 +294,7 @@ main:
 
         cmp x0, #9
         bne no_mostra_dundies
-            //bl dundies
+            bl dundies
             b menu_loop
         no_mostra_dundies:
 
@@ -901,15 +910,18 @@ filtro_quantita:
 
 // OPZIONE 9
 //-------------------------------------------------------------------------
-/*
+
 .type dundies, %function
 dundies:
     stp x29, x30, [sp, #-16]!
+
+    adr x0, fmt_dundies
+    bl printf
 
     mov x0, #0
     ldp x29, x30, [sp], #16
     ret
 .size dundies, (. - dundies)
- */
+ 
 //------------------------------------------------------------------------------------
 
