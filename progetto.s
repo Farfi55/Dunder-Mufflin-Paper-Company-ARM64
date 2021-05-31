@@ -23,9 +23,9 @@ fmt_menu_entry:
 fmt_menu_options:
     .ascii "\n1: Aggiungi ordine\n"
     .ascii "2: Elimina ordine\n"
-    .ascii "3: Calcola prezzo unitario medio\n"
-    .ascii "4: Calcola valore complessivo magazzino\n"
-    .ascii "5: Calcola quantità totale ordini\n"
+    .ascii "3: Calcola valore complessivo magazzino\n"
+    .ascii "4: Calcola quantità totale ordini\n"
+    .ascii "5: Calcola prezzo unitario medio\n"
     .ascii "6: Calcola spessore medio\n"
     .ascii "7: Mostra ordini con quantità maggiori di\n"
     .ascii "8: Mostra ordini con quantità minori di\n"
@@ -246,25 +246,25 @@ main:
         bne no_rimuovi_ordine
             bl rimuovi_ordine
             b menu_loop
-        no_rimuovi_ordine:
+        no_rimuovi_ordine:        
 
         cmp x0, #3
-        bne no_prezzo_unitario_medio
-            bl prezzo_unitario_medio
-            b menu_loop
-        no_prezzo_unitario_medio:
-
-        cmp x0, #4
         bne no_valore_complessivo_magazino
             bl valore_complessivo_magazino
             b menu_loop
         no_valore_complessivo_magazino:
 
-        cmp x0, #5
+        cmp x0, #4
         bne no_quantita_totale_ordini
             bl quantita_totale_ordini
             b menu_loop
         no_quantita_totale_ordini:
+
+        cmp x0, #5
+        bne no_prezzo_unitario_medio
+            bl prezzo_unitario_medio
+            b menu_loop
+        no_prezzo_unitario_medio:
 
         cmp x0, #6
             bne no_spessore_medio
