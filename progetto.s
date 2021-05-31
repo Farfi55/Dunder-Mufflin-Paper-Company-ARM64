@@ -220,9 +220,6 @@ main:
     adr x0, fmt_menu_title  // logo della compagnia
     bl printf
 
-    //bl check_file //Controlliamo se il file esiste
-
-
 
     # load data from file
     menu_loop:
@@ -360,43 +357,7 @@ print_orders:
     .size print_orders, (. - print_orders)
 //------------------------------------------------------------------------------------
 
-// CHECK FILE
-//----------------------------------
-.type check_file, %function
-check_file:
-    stp x29, x30, [sp, #-16]!
-    str x20, [sp, #-8]!
-    
-    adr x0, filename
-    adr x1, read_mode
-    bl fopen
-    
-    cbnz x0, _exit_check_file
 
-    //In caso il file non esiste andiamo a creare un file vuoto e lo inizializiamo a zero
-
-    adr x0, filename
-    adr x1, write_mode
-    bl fopen
-
-    mov x20, x0
-
-    adr x0, n_orders
-    mov x1, #4
-    mov x2, #1
-    mov x3, x20
-    bl fwrite
-
-    mov x0, x20
-    bl fclose
-
-    _exit_check_file:
-    
-    ldr x20, [sp], #8
-    ldp x29, x30, [sp], #16
-    ret
-.size check_file, (. - check_file)
-//----------------------------------
 
 // WRITE DATA
 //----------------------------------
