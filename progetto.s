@@ -102,7 +102,7 @@ n_orders: .word 0
 .bss
 tmp_str: .skip 128
 tmp_int: .skip 8
-orders: .skip order_size_aligned * max_orders    //La "scatola" che andiamo a riempire con i dati
+orders: .skip order_size_aligned * max_orders    //La "scatola" che andiamo a riempire con i dati 
 
 .macro read_int prompt
     adr x0, \prompt
